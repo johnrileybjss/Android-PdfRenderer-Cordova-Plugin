@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        id="cordova-android-pdf-renderer-plugin" version="0.2.3">
+    <name>PdfRendererPlugin</name>
+    <description>Cordova PDF Renderer Plugin</description>
+    <license>MIT</license>
+    <keywords>cordova,pdf,renderer</keywords>
+    <repo>https://github.com/johnrileybjss/Android-PdfRenderer-Cordova-Plugin</repo>
+
+    <platform name="android">
+        <js-module src="www/js/PdfRendererPlugin.js" name="PdfRendererPlugin">
+            <clobbers target="PdfRendererPlugin"/>
+        </js-module>
+
+        <config-file target="config.xml" parent="/*">
+            <feature name="PdfRendererPlugin">
+                <param name="android-package" value="com.bjss.plugin.PdfRendererPlugin"/>
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+
+        <source-file src="src/android/PdfRendererPlugin.java" target-dir="src/com/bjss/plugin/" />
+    </platform>
+</plugin>
