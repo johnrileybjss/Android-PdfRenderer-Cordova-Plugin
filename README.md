@@ -18,4 +18,4 @@ In order to build the Android APK, you can simply run "build-project" from the r
 
 Once your project has been built, simply open /testProject/platforms/android/ in Android Studio, and run the application with your chosen emulator.
 
-Or, once the apk is built, load the apk directly onto your Android Device.
+Alternatively, once the apk is built, load the apk directly onto your Android Device.
