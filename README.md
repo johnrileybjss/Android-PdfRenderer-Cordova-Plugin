@@ -4,6 +4,8 @@ This is a simple Cordova Plugin to surface the display functionality of the Andr
 
 As an example, the application loads a sample PDF file from the assets folder of the test project.
 
+The application was tested on an emulator running a Nexus 6 image using API 24
+
 ## Building the Project
 
 I've included a series of Windows command files to facilitate building the project.
