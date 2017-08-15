@@ -3,35 +3,20 @@ var PLUGIN_NAME = "PdfRendererPlugin";
 
 var SERVICE_OPEN = "open";
 var SERVICE_CLOSE = "close";
+var SERVICE_NEXT_PAGE = "nextPage";
+var SERVICE_PREVIOUS_PAGE = "previousPage";
+
 var SERVICE_PAGE_COUNT = "pageCount";
-var SERVICE_RENDER_PAGE = "renderPage";
+var SERVICE_PAGE_NUMBER = "pageNumber";
+var SERVICE_PAGE_INFO = "pageInfo";
 
 var RENDER_MODE_DISPLAY = "display";
-var RENDER_MODE_PRINT = "print";
 
 var PdfRendererPlugin = {
     display: function(filePath, callback){
         cordova.exec(callback, function(err){
             // console.log(err);
-        }, PLUGIN_NAME, SERVICE_OPEN, [filePath, RENDER_MODE_DISPLAY]);
-    },
-
-    displayWithDimensions: function(filePath, width, height, callback){
-        cordova.exec(callback, function(err){
-            // console.log(err);
-        }, PLUGIN_NAME, SERVICE_OPEN, [filePath, RENDER_MODE_DISPLAY, width, height]);
-    },
-
-    print: function(filePath, callback){
-        cordova.exec(callback, function(err){
-           // console.log(err);
-        }, PLUGIN_NAME, SERVICE_OPEN, [filePath, RENDER_MODE_PRINT]);
-    },
-
-    printWithDimensions: function(filePath, width, height, callback){
-        cordova.exec(callback, function(err){
-           // console.log(err);
-        }, PLUGIN_NAME, SERVICE_OPEN, [filePath, RENDER_MODE_PRINT, width, height]);
+        }, PLUGIN_NAME, SERVICE_OPEN, [filePath]);
     },
 
     renderPage: function(pageNo, callback){
@@ -40,34 +25,34 @@ var PdfRendererPlugin = {
         }, PLUGIN_NAME, SERVICE_RENDER_PAGE, [pageNo]);
     },
 
-    renderPageForDisplay: function(pageNo, callback){
+    renderNextPage: function(callback){
         cordova.exec(callback, function(err){
-           // console.log(err);
-        }, PLUGIN_NAME, SERVICE_RENDER_PAGE, [pageNo, RENDER_MODE_DISPLAY]);
+            // console.log(err);
+        }, PLUGIN_NAME, SERVICE_NEXT_PAGE, []);
     },
 
-    renderPageForDisplayWithDimensions: function(pageNo, width, height, callback){
+    renderPreviousPage: function(callback){
         cordova.exec(callback, function(err){
-           // console.log(err);
-        }, PLUGIN_NAME, SERVICE_RENDER_PAGE, [pageNo, RENDER_MODE_DISPLAY, width, height]);
-    },
-
-    renderPageForPrint: function(pageNo, callback){
-        cordova.exec(callback, function(err){
-           // console.log(err);
-        }, PLUGIN_NAME, SERVICE_RENDER_PAGE, [pageNo, RENDER_MODE_PRINT]);
-    },
-
-    renderPageForPrintWithDimensions: function(pageNo, width, height, callback){
-        cordova.exec(callback, function(err){
-            //console.log(err);
-        }, PLUGIN_NAME, SERVICE_RENDER_PAGE, [pageNo, RENDER_MODE_PRINT, width, height]);
+            // console.log(err);
+        }, PLUGIN_NAME, SERVICE_PREVIOUS_PAGE, []);
     },
 
     close: function(callback){
         cordova.exec(callback, function(err){
-          //  console.log(err);
+           //  console.log(err);
         }, PLUGIN_NAME, SERVICE_CLOSE, []);
+    },
+
+    getPageInfo: function(callback){
+        cordova.exec(callback, function(err){
+           // console.log(err);
+        }, PLUGIN_NAME, SERVICE_PAGE_INFO, []);
+    },
+
+    getCurrentPageNumber: function(callback){
+        cordova.exec(callback, function(err){
+           // console.log(err);
+        }, PLUGIN_NAME, SERVICE_PAGE_NUMBER, []);
     },
 
     getPageCount: function(callback){

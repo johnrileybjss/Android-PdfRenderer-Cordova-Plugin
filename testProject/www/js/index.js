@@ -3,7 +3,6 @@ var testFilePath = 'bjss-capabilities-software-development.pdf';
 var app = {
     // Application Constructor
     initialize: function() {
-        console.log('app.initialize function running');
         document.addEventListener('deviceready', this.onDeviceReady.bind(this), false);
     },
 
@@ -15,36 +14,45 @@ var app = {
         document.body.appendChild(image);
     },
 
-    display: function(){
-        console.log('app.display function running');
-        window.PdfRendererPlugin.display(testFilePath, function(data){
-            app.showPDFInImage(data);
-        });
+    updatePageCount: function(currentPage, pageCount){
+        var text = document.getElementById("page-count");
+        text.innerHTML = (currentPage + 1) + '/' + pageCount;
     },
 
-    print: function(){
-        console.log('app.print function running');
-        window.PdfRendererPlugin.print(testFilePath, function(data){
+    display: function(){
+        window.PdfRendererPlugin.display(testFilePath, function(data){
             app.showPDFInImage(data);
+
+            window.PdfRendererPlugin.getPageInfo(function(pageData){
+                console.log(pageData);
+                app.updatePageCount(pageData.pageNumber, pageData.pageCount);
+            });
         });
     },
 
     previousPage: function(){
-        console.log('Previous Page Requested');
-        //TODO
+        window.PdfRendererPlugin.renderPreviousPage(function(data){
+            app.showPDFInImage(data);
+
+            window.PdfRendererPlugin.getPageInfo(function(pageData){
+                console.log(pageData);
+                app.updatePageCount(pageData.pageNumber, pageData.pageCount);
+            });
+        });
     },
 
     nextPage: function(){
-        console.log('Next Page Requested');
-        //TODO
+        window.PdfRendererPlugin.renderNextPage(function(data){
+            app.showPDFInImage(data);
+
+            window.PdfRendererPlugin.getPageInfo(function(pageData){
+                console.log(pageData);
+                app.updatePageCount(pageData.pageNumber, pageData.pageCount);
+            });
+        });
     },
 
-    // deviceready Event Handler
-    //
-    // Bind any cordova events here. Common events are:
-    // 'pause', 'resume', etc.
     onDeviceReady: function() {
-        console.log('app.onDeviceReady function running');
         this.display();
     }
 };

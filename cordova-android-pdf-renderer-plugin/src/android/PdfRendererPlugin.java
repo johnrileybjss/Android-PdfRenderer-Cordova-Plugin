@@ -40,8 +40,9 @@ public class PdfRendererPlugin extends CordovaPlugin {
     private PdfRenderer renderer = null;
     private Page currentPage = null;
 
-    private int mWidth = 400, mHeight = 600;
+    private int mWidth = 400, mHeight = 600, mPageNo = 0;
     private String mRenderMode = "display";
+    private String mFilePath = "";
 
     private Context context;
 
@@ -58,11 +59,22 @@ public class PdfRendererPlugin extends CordovaPlugin {
         if(action.equals("open")){
             return executeOpen(args, callbackContext);
         }
-        else if(action.equals("renderPage")){
-            return executeRenderPage(args, callbackContext);
+        else if(action.equals("nextPage")){
+            return executeNextPage(callbackContext);
+        }
+        else if(action.equals("previousPage")){
+            return executePreviousPage(callbackContext);
+        }
+        else if(action.equals("pageInfo")){
+            callbackContext.success(this.getPageInfo());
+            return true;
         }
         else if(action.equals("pageCount")){
             callbackContext.success(this.getPageCount());
+            return true;
+        }
+        else if(action.equals("pageNumber")){
+            callbackContext.success(this.getCurrentPageNo());
             return true;
         }
         else if(action.equals("close")){
@@ -82,18 +94,12 @@ public class PdfRendererPlugin extends CordovaPlugin {
                 callbackContext.error("No arguments provided. Exiting process.");
                 return true;
             }
-            else if(args.length() < 2){
-                Log.e(LOG_TAG, "Insufficient arguments provided. Exiting process.");
-                callbackContext.error("Insufficient arguments provided. Exiting process.");
-                return true;
-            }
-            if(args.length() > 3){
-                mWidth = args.getInt(2);
-                mHeight = args.getInt(3);
+            if(args.length() > 2){
+                mWidth = args.getInt(1);
+                mHeight = args.getInt(2);
             }
 
             filePath = args.getString(0);
-            mRenderMode = args.getString(1);
         }
         catch(JSONException je){
             String msg = je.getMessage();
@@ -107,11 +113,14 @@ public class PdfRendererPlugin extends CordovaPlugin {
         boolean isPageOpen = this.openPage(0, callbackContext);
         if(isPageOpen){
             Bitmap bitmap = getBitmap(mWidth, mHeight);
+            mPageNo = 0;
+            mFilePath = filePath;
             this.sendBitmapAsBytes(0, bitmap, callbackContext);
         }
         return true;
     }
 
+    /*
     private boolean executeRenderPage(JSONArray args, CallbackContext callbackContext){
         int pageNo = -1;
         try {
@@ -120,12 +129,9 @@ public class PdfRendererPlugin extends CordovaPlugin {
                 callbackContext.error("No arguments provided. Exiting process.");
                 return true;
             }
-            if (args.length() > 1) {
-                mRenderMode = args.getString(1);
-            }
-            if (args.length() > 3) {
-                mWidth = args.getInt(2);
-                mHeight = args.getInt(3);
+            if (args.length() > 2) {
+                mWidth = args.getInt(1);
+                mHeight = args.getInt(2);
             }
 
             pageNo = args.getInt(0);
@@ -143,85 +149,48 @@ public class PdfRendererPlugin extends CordovaPlugin {
         boolean isPageOpen = this.openPage(pageNo, callbackContext);
         if(isPageOpen) {
             Bitmap bitmap = getBitmap(mWidth, mHeight);
+            mPageNo = pageNo;
             this.sendBitmapAsBytes(pageNo, bitmap, callbackContext);
         }
         return true;
     }
-
-    /*
-    // Requests the permission to read from external storage if not already available
-    private void validatePermissions(){
-        Log.d(LOG_TAG, "validatePermissions");
-        if(!cordova.hasPermission(READ_EXTERNAL_STORAGE)){
-            Log.i(LOG_TAG, "Requesting External Storage Read Permission...");
-            cordova.requestPermission(this, CODE_READ_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE);
-        }
-    }
     */
 
-    private int getPageCount() {
-        if(renderer == null)
-            return 0;
+    private boolean executeNextPage(CallbackContext callbackContext){
+        int pageCount = getPageCount();
+        if(pageCount == 0 || mPageNo + 1 >= pageCount)
+            return false;
 
-        return renderer.getPageCount();
-    }
+        closeCurrentPage();
 
-    private void initializeWriteFileDescriptor(String filePath, CallbackContext callbackContext) throws IOException, FileNotFoundException, FileFormatException {
-        Log.d(LOG_TAG, "initializeWriteFileDescriptor");
-        fileDescriptor = null;
-
-        if(filePath == null || filePath.length() < 1)
-            throw new FileNotFoundException("The file path provided is not a valid file path.");
-
-        String[] pathArr = filePath.split("\\.");
-
-        int numSections = pathArr.length;
-        if(numSections < 2)
-            throw new FileNotFoundException("The file path provided is not a valid file path: " + filePath);
-
-        String ext = pathArr[numSections - 1];
-        if(!ext.equals("pdf"))
-            throw new FileFormatException("Invalid File Extension provided to Pdf Render Service: " + ext);
-
-        fileDescriptor = getWriteFileDescriptor(filePath);
-    }
-
-    private void initializeRenderer(String filePath, CallbackContext callbackContext){
-        Log.d(LOG_TAG, "initializeRenderer");
-        renderer = null;
-
-        try {
-            initializeWriteFileDescriptor(filePath, callbackContext);
-
-            if(fileDescriptor != null) {
-                renderer = new PdfRenderer(fileDescriptor);
-            }
-            else{
-                Log.e(LOG_TAG, "An unknown error has occurred with the File Descriptor.");
-                callbackContext.error("An unknown error has occurred with the File Descriptor.");
-            }
-        }
-        catch(IOException io){
-            String msg = io.getMessage();
-            if(msg == null)
-                msg = "An error has occurred while loading the requested file.";
-
-            Log.e(LOG_TAG, msg);
-            callbackContext.error(msg);
-        }
-    }
-
-    private void closeRenderer() {
-        if(renderer == null) {
-            Log.w(LOG_TAG, "Attempted to close null renderer. Skipping operation.");
-            return;
+        boolean isPageOpen = this.openPage(mPageNo + 1, callbackContext);
+        if(isPageOpen){
+            ++mPageNo;
+            Bitmap bitmap = getBitmap(mWidth, mHeight);
+            this.sendBitmapAsBytes(mPageNo, bitmap, callbackContext);
         }
 
-        renderer.close();
+        return true;
+    }
+
+    private boolean executePreviousPage(CallbackContext callbackContext){
+        int pageCount = getPageCount();
+        if(pageCount == 0 || mPageNo - 1 < 0)
+            return false;
+
+        closeCurrentPage();
+
+        boolean isPageOpen = this.openPage(mPageNo - 1, callbackContext);
+        if(isPageOpen){
+            --mPageNo;
+            Bitmap bitmap = getBitmap(mWidth, mHeight);
+            this.sendBitmapAsBytes(mPageNo, bitmap, callbackContext);
+        }
+
+        return true;
     }
 
     private boolean openPage(int index, CallbackContext callbackContext){
-        Log.d(LOG_TAG, "openPage");
         currentPage = null;
 
         if(renderer == null){
@@ -248,7 +217,6 @@ public class PdfRendererPlugin extends CordovaPlugin {
     }
 
     private void sendBitmapAsBytes(int index, Bitmap bitmap, CallbackContext callbackContext){
-        Log.d(LOG_TAG, "sendBitmapAsBytes");
         if(renderer == null) {
             Log.e(LOG_TAG, "Renderer was not properly initialized.");
             callbackContext.error("Renderer was not properly initialized.");
@@ -275,13 +243,75 @@ public class PdfRendererPlugin extends CordovaPlugin {
         }
     }
 
-    private File copyFileFromAssets(String filePath) throws IOException {
-        Log.d(LOG_TAG, "copyFileFromAssets");
+    private void initializeRenderer(String filePath, CallbackContext callbackContext){
+        renderer = null;
 
+        try {
+            initializeWriteFileDescriptor(filePath, callbackContext);
+
+            if(fileDescriptor != null) {
+                renderer = new PdfRenderer(fileDescriptor);
+            }
+            else{
+                Log.e(LOG_TAG, "An unknown error has occurred with the File Descriptor.");
+                callbackContext.error("An unknown error has occurred with the File Descriptor.");
+            }
+        }
+        catch(IOException io){
+            String msg = io.getMessage();
+            if(msg == null)
+                msg = "An error has occurred while loading the requested file.";
+
+            Log.e(LOG_TAG, msg);
+            callbackContext.error(msg);
+        }
+    }
+
+    private void closeCurrentPage() {
+        if(currentPage != null){
+            currentPage.close();
+        }
+    }
+
+    private void closeRenderer() {
+        if(renderer == null) {
+            Log.w(LOG_TAG, "Attempted to close null renderer. Skipping operation.");
+            return;
+        }
+
+        renderer.close();
+    }
+
+    private void initializeWriteFileDescriptor(String filePath, CallbackContext callbackContext) throws IOException, FileNotFoundException, FileFormatException {
+        fileDescriptor = null;
+
+        if(filePath == null || filePath.length() < 1)
+            throw new FileNotFoundException("The file path provided is not a valid file path.");
+
+        String[] pathArr = filePath.split("\\.");
+
+        int numSections = pathArr.length;
+        if(numSections < 2)
+            throw new FileNotFoundException("The file path provided is not a valid file path: " + filePath);
+
+        String ext = pathArr[numSections - 1];
+        if(!ext.equals("pdf"))
+            throw new FileFormatException("Invalid File Extension provided to Pdf Render Service: " + ext);
+
+        fileDescriptor = getWriteFileDescriptor(filePath);
+    }
+
+    private ParcelFileDescriptor getWriteFileDescriptor(String filePath) throws IOException, FileNotFoundException {
+        File file = copyFileFromAssets(filePath);
+
+        final int fileMode = ParcelFileDescriptor.MODE_READ_ONLY;
+
+        return ParcelFileDescriptor.open(file, fileMode);
+    }
+
+    private File copyFileFromAssets(String filePath) throws IOException {
         InputStream input = null;
         FileOutputStream output = null;
-
-        Log.d(LOG_TAG, "Opening PDF File");
 
         File file = new File(context.getFilesDir(), filePath);
 
@@ -309,17 +339,31 @@ public class PdfRendererPlugin extends CordovaPlugin {
         return file;
     }
 
-    private ParcelFileDescriptor getWriteFileDescriptor(String filePath) throws IOException, FileNotFoundException {
-        Log.d(LOG_TAG, "getWriteFileDescriptor");
-        File file = copyFileFromAssets(filePath);
+    private int getPageCount() {
+        if(renderer == null)
+            return 0;
 
-        final int fileMode = ParcelFileDescriptor.MODE_READ_ONLY;
+        return renderer.getPageCount();
+    }
 
-        return ParcelFileDescriptor.open(file, fileMode);
+    private int getCurrentPageNo() {
+        return mPageNo;
+    }
+
+    private JSONObject getPageInfo() throws JSONException{
+        int pageNo = getCurrentPageNo();
+        int pageCount = getPageCount();
+
+        JSONObject output = new JSONObject();
+
+        output.put("filePath", mFilePath);
+        output.put("pageNumber", pageNo);
+        output.put("pageCount", pageCount);
+
+        return output;
     }
 
     private static byte[] toByteArray(Bitmap bitmap){
-        Log.d(LOG_TAG, "toByteArray");
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
 
@@ -327,7 +371,6 @@ public class PdfRendererPlugin extends CordovaPlugin {
     }
 
     private static Bitmap getBitmap(int width, int height){
-        Log.d(LOG_TAG, "getBitmap");
         return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
     }
 

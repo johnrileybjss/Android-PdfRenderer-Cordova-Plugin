@@ -6,19 +6,18 @@
         <meta name="viewport" content="user-scalable=no, initial-scale=1,
               maximum-scale=1, minimum-scale=1, width=device-width,
               height=device-height" />
+
+        <link rel="stylesheet" href="css/index.css">
     </head>
     <body>
-        <div class="app">
+        <div>
             <h1>Cordova PDF Generation Plugin Test</h1>
 
-            <div>
-                <button id="display-button" onclick="app.display()">Display (View)</button>
-                <button id="print-button" onclick="app.print()">Display (Print)</button>
-            </div>
+            <div><small id="page-count" class="right padded">0/0</small></div>
 
-            <div>
-                <button id="previous-button" style="float: left;" onclick="app.previousPage()">Previous Page</button>
-                <button id="next-button" style="float: right;" onclick="app.nextPage()">Next Page</button>
+            <div class="padded clearFix">
+                <button id="previous-button" class="left" onclick="app.previousPage()">Previous Page</button>
+                <button id="next-button" class="right" onclick="app.nextPage()">Next Page</button>
             </div>
 
             <img id="image-display"/>
