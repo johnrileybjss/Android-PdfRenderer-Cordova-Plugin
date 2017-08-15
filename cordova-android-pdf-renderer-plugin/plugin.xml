@@ -3,8 +3,7 @@
         id="cordova-android-pdf-renderer-plugin" version="0.2.3">
     <name>PdfRendererPlugin</name>
     <description>Cordova PDF Renderer Plugin</description>
-    <license>MIT</license>
-    <keywords>cordova,pdf,renderer</keywords>
+    <keywords>cordova,android,pdf,renderer</keywords>
     <repo>https://github.com/johnrileybjss/Android-PdfRenderer-Cordova-Plugin</repo>
 
     <platform name="android">

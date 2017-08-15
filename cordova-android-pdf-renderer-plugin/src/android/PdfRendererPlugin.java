@@ -86,6 +86,7 @@ public class PdfRendererPlugin extends CordovaPlugin {
         return false;
     }
 
+    // Initializes the Renderer and opens the file
     private boolean executeOpen(JSONArray args, CallbackContext callbackContext){
         String filePath = "";
         try{
@@ -120,42 +121,7 @@ public class PdfRendererPlugin extends CordovaPlugin {
         return true;
     }
 
-    /*
-    private boolean executeRenderPage(JSONArray args, CallbackContext callbackContext){
-        int pageNo = -1;
-        try {
-            if (args.length() < 1) {
-                Log.e(LOG_TAG, "No arguments provided. Exiting process.");
-                callbackContext.error("No arguments provided. Exiting process.");
-                return true;
-            }
-            if (args.length() > 2) {
-                mWidth = args.getInt(1);
-                mHeight = args.getInt(2);
-            }
-
-            pageNo = args.getInt(0);
-        }
-        catch(JSONException je){
-            String msg = je.getMessage();
-            if(msg == null)
-                msg = "Unknown JSONException has occurred";
-            Log.e(LOG_TAG, msg);
-        }
-
-        if(pageNo < 0)
-            return false;
-
-        boolean isPageOpen = this.openPage(pageNo, callbackContext);
-        if(isPageOpen) {
-            Bitmap bitmap = getBitmap(mWidth, mHeight);
-            mPageNo = pageNo;
-            this.sendBitmapAsBytes(pageNo, bitmap, callbackContext);
-        }
-        return true;
-    }
-    */
-
+    // Closes the current page and opens the next page (if available)
     private boolean executeNextPage(CallbackContext callbackContext){
         int pageCount = getPageCount();
         if(pageCount == 0 || mPageNo + 1 >= pageCount)
@@ -173,6 +139,7 @@ public class PdfRendererPlugin extends CordovaPlugin {
         return true;
     }
 
+    // Closes the current page and opens the previous page (if available)
     private boolean executePreviousPage(CallbackContext callbackContext){
         int pageCount = getPageCount();
         if(pageCount == 0 || mPageNo - 1 < 0)
@@ -216,6 +183,7 @@ public class PdfRendererPlugin extends CordovaPlugin {
         return true;
     }
 
+    // Converts a bitmap object to a byte array and sends the data back to the callback context
     private void sendBitmapAsBytes(int index, Bitmap bitmap, CallbackContext callbackContext){
         if(renderer == null) {
             Log.e(LOG_TAG, "Renderer was not properly initialized.");
@@ -243,11 +211,12 @@ public class PdfRendererPlugin extends CordovaPlugin {
         }
     }
 
+    // Initializes the PDF Renderer using a file descriptor based on the file at the provided path
     private void initializeRenderer(String filePath, CallbackContext callbackContext){
         renderer = null;
 
         try {
-            initializeWriteFileDescriptor(filePath, callbackContext);
+            initializeFileDescriptor(filePath, callbackContext);
 
             if(fileDescriptor != null) {
                 renderer = new PdfRenderer(fileDescriptor);
@@ -282,7 +251,8 @@ public class PdfRendererPlugin extends CordovaPlugin {
         renderer.close();
     }
 
-    private void initializeWriteFileDescriptor(String filePath, CallbackContext callbackContext) throws IOException, FileNotFoundException, FileFormatException {
+    // Initializes the file descriptor if the file path is valid
+    private void initializeFileDescriptor(String filePath, CallbackContext callbackContext) throws IOException, FileNotFoundException, FileFormatException {
         fileDescriptor = null;
 
         if(filePath == null || filePath.length() < 1)
@@ -298,17 +268,17 @@ public class PdfRendererPlugin extends CordovaPlugin {
         if(!ext.equals("pdf"))
             throw new FileFormatException("Invalid File Extension provided to Pdf Render Service: " + ext);
 
-        fileDescriptor = getWriteFileDescriptor(filePath);
+        fileDescriptor = getFileDescriptor(filePath);
     }
 
-    private ParcelFileDescriptor getWriteFileDescriptor(String filePath) throws IOException, FileNotFoundException {
+    // Copies the File at the specified path from the assets folder and initializes a ParcelFileDescriptor using that file
+    private ParcelFileDescriptor getFileDescriptor(String filePath) throws IOException, FileNotFoundException {
         File file = copyFileFromAssets(filePath);
 
-        final int fileMode = ParcelFileDescriptor.MODE_READ_ONLY;
-
-        return ParcelFileDescriptor.open(file, fileMode);
+        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
     }
 
+    // Copies the specified file from the assets folder to a usable path
     private File copyFileFromAssets(String filePath) throws IOException {
         InputStream input = null;
         FileOutputStream output = null;

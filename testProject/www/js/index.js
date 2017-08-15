@@ -24,7 +24,6 @@ var app = {
             app.showPDFInImage(data);
 
             window.PdfRendererPlugin.getPageInfo(function(pageData){
-                console.log(pageData);
                 app.updatePageCount(pageData.pageNumber, pageData.pageCount);
             });
         });
@@ -35,7 +34,6 @@ var app = {
             app.showPDFInImage(data);
 
             window.PdfRendererPlugin.getPageInfo(function(pageData){
-                console.log(pageData);
                 app.updatePageCount(pageData.pageNumber, pageData.pageCount);
             });
         });
@@ -46,7 +44,6 @@ var app = {
             app.showPDFInImage(data);
 
             window.PdfRendererPlugin.getPageInfo(function(pageData){
-                console.log(pageData);
                 app.updatePageCount(pageData.pageNumber, pageData.pageCount);
             });
         });

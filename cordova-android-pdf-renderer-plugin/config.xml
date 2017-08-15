@@ -2,7 +2,7 @@
 <widget id="com.bjss.pdf" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>CordovaPDFRendererPlugin</name>
     <description>
-        A sample Apache Cordova application that demonstrates the Cordova PDF Renderer Plugin
+        A sample Cordova plugin that surfaces the functionality of the Android PDFRenderer API.
     </description>
     <author email="john.riley@bjss.com" href="https://github.com/johnrileybjss">
         John Riley - BJSS
