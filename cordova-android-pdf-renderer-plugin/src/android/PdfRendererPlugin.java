@@ -15,11 +15,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.FileOutputStream;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 
 import android.graphics.Bitmap;
 import android.graphics.pdf.PdfRenderer;
@@ -29,6 +28,7 @@ import android.os.ParcelFileDescriptor;
 
 import android.util.Log;
 
+//TODO - Break out Exceptions/Callback Context calls --> ensure callback context is used only ONCE
 /**
  * This class handles a pdf file called from JavaScript and converts a selected page (default is first) to a byte array representing a bitmap.
  */
@@ -44,13 +44,11 @@ public class PdfRendererPlugin extends CordovaPlugin {
     private String mRenderMode = "display";
 
     private Context context;
-    private AssetManager assetManager;
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView){
         super.initialize(cordova, webView);
 
-        assetManager = cordova.getActivity().getAssets();
         context = cordova.getActivity().getApplicationContext();
     }
 
@@ -198,6 +196,10 @@ public class PdfRendererPlugin extends CordovaPlugin {
             if(fileDescriptor != null) {
                 renderer = new PdfRenderer(fileDescriptor);
             }
+            else{
+                Log.e(LOG_TAG, "An unknown error has occurred with the File Descriptor.");
+                callbackContext.error("An unknown error has occurred with the File Descriptor.");
+            }
         }
         catch(IOException io){
             String msg = io.getMessage();
@@ -221,6 +223,12 @@ public class PdfRendererPlugin extends CordovaPlugin {
     private boolean openPage(int index, CallbackContext callbackContext){
         Log.d(LOG_TAG, "openPage");
         currentPage = null;
+
+        if(renderer == null){
+            Log.e(LOG_TAG, "Renderer was found to be null.");
+            callbackContext.error("An unknown error has occurred while attempting to render your document.");
+            return false;
+        }
 
         int pageCount = getPageCount();
         if(pageCount < 1) {
@@ -271,42 +279,41 @@ public class PdfRendererPlugin extends CordovaPlugin {
         Log.d(LOG_TAG, "copyFileFromAssets");
 
         InputStream input = null;
-        OutputStream output = null;
+        FileOutputStream output = null;
+
+        Log.d(LOG_TAG, "Opening PDF File");
+
         File file = new File(context.getFilesDir(), filePath);
-        try {
-            input = assetManager.open(filePath);
-            output = context.openFileOutput(file.getName(), Context.MODE_WORLD_READABLE);
 
-            byte[] buffer = new byte[1024];
-            int currentData;
-            while((currentData = input.read(buffer)) != -1){
-                output.write(buffer, 0, currentData);
-            }
+        input = context.getAssets().open("www/assets/" + filePath);
+        output = context.openFileOutput(file.getName(), Context.MODE_PRIVATE);
 
-            output.flush();
+        byte[] buffer = new byte[1024];
+        int currentData;
+        while((currentData = input.read(buffer)) != -1){
+            output.write(buffer, 0, currentData);
         }
-        catch (Exception e) {
-            Log.e(LOG_TAG, e.getMessage());
+
+        output.flush();
+
+        if(output != null){
+            output.close();
+            output = null;
         }
-        finally{
-            if(input != null) {
-                input.close();
-                input = null;
-            }
-            if(output != null){
-                output.close();
-                output = null;
-            }
+
+        if(input != null) {
+            input.close();
+            input = null;
         }
+
         return file;
     }
 
     private ParcelFileDescriptor getWriteFileDescriptor(String filePath) throws IOException, FileNotFoundException {
         Log.d(LOG_TAG, "getWriteFileDescriptor");
         File file = copyFileFromAssets(filePath);
-        final int fileMode = ParcelFileDescriptor.MODE_TRUNCATE|
-                             ParcelFileDescriptor.MODE_CREATE |
-                             ParcelFileDescriptor.MODE_WRITE_ONLY;
+
+        final int fileMode = ParcelFileDescriptor.MODE_READ_ONLY;
 
         return ParcelFileDescriptor.open(file, fileMode);
     }

@@ -12,9 +12,16 @@
             <h1>Cordova PDF Generation Plugin Test</h1>
 
             <div>
-                <button id="display-button" onclick="display()">Display (View)</button>
-                <button id="print-button" onclick="print()">Display (Print)</button>
+                <button id="display-button" onclick="app.display()">Display (View)</button>
+                <button id="print-button" onclick="app.print()">Display (Print)</button>
             </div>
+
+            <div>
+                <button id="previous-button" style="float: left;" onclick="app.previousPage()">Previous Page</button>
+                <button id="next-button" style="float: right;" onclick="app.nextPage()">Next Page</button>
+            </div>
+
+            <img id="image-display"/>
         </div>
 
         <script type="text/javascript" src="cordova.js"></script>
