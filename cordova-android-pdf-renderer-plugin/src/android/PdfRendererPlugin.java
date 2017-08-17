@@ -97,14 +97,17 @@ public class PdfRendererPlugin extends CordovaPlugin {
                 mHeight = args.getInt(2);
             }
 
+            // Initialize the PDFRenderer using the requested file
             filePath = args.getString(0);
             this.initializeRenderer(filePath);
 
+            // Open the First page of the PDF
             this.openPage(0);
 
             mPageNo = 0;
             mFilePath = filePath;
 
+            // Convert the PDF bitmap into a byte array
             Bitmap bitmap = getBitmap(mWidth, mHeight);
             byte[] bytes = this.renderBitmapAsBytes(0, bitmap);
 
@@ -133,9 +136,11 @@ public class PdfRendererPlugin extends CordovaPlugin {
 
             closeCurrentPage();
 
+            // Open the next page and increment the page number variable.
             this.openPage(mPageNo + 1);
             ++mPageNo;
 
+            // Convert the PDF bitmap into a byte array
             Bitmap bitmap = getBitmap(mWidth, mHeight);
             byte[] bytes = this.renderBitmapAsBytes(mPageNo, bitmap);
 
@@ -164,9 +169,11 @@ public class PdfRendererPlugin extends CordovaPlugin {
 
             closeCurrentPage();
 
+            // Open the Previous Page and decrement the page number variable
             this.openPage(mPageNo - 1);
             --mPageNo;
 
+            // Convert the PDF bitmap into a byte array
             Bitmap bitmap = getBitmap(mWidth, mHeight);
             byte[] bytes = this.renderBitmapAsBytes(mPageNo, bitmap);
 
@@ -211,6 +218,7 @@ public class PdfRendererPlugin extends CordovaPlugin {
         if(currentPage == null)
             throw new PDFRendererException("An unexpected exception has occurred at runtime - Could not render the requested page.");
 
+        // Select the render mode and render the current page
         int renderMode = mRenderMode.equals("print") ? Page.RENDER_MODE_FOR_PRINT : Page.RENDER_MODE_FOR_DISPLAY;
         currentPage.render(bitmap, null, null, renderMode);
 
@@ -269,31 +277,40 @@ public class PdfRendererPlugin extends CordovaPlugin {
 
     // Copies the specified file from the assets folder to a usable path
     private File copyFileFromAssets(String filePath) throws IOException {
+        File file = null;
         InputStream input = null;
         FileOutputStream output = null;
 
-        File file = new File(context.getFilesDir(), filePath);
+        IOException exception = null;
+        try {
+            file = new File(context.getFilesDir(), filePath);
 
-        input = context.getAssets().open("www/assets/" + filePath);
-        output = context.openFileOutput(file.getName(), Context.MODE_PRIVATE);
+            input = context.getAssets().open("www/assets/" + filePath);
+            output = context.openFileOutput(file.getName(), Context.MODE_PRIVATE);
 
-        byte[] buffer = new byte[1024];
-        int currentData;
-        while((currentData = input.read(buffer)) != -1){
-            output.write(buffer, 0, currentData);
+            // Write the PDF Data to a temporary output file
+            byte[] buffer = new byte[1024];
+            int currentData;
+            while ((currentData = input.read(buffer)) != -1) {
+                output.write(buffer, 0, currentData);
+            }
+
+            output.flush();
+        }
+        catch(IOException io){
+            // Save for later - ensure filestreams are closed before throwing exception
+            exception = io;
+        }
+        finally{
+            if(output != null)
+                output.close();
+
+            if(input != null)
+                input.close();
         }
 
-        output.flush();
-
-        if(output != null){
-            output.close();
-            output = null;
-        }
-
-        if(input != null) {
-            input.close();
-            input = null;
-        }
+        if(exception != null)
+            throw exception;
 
         return file;
     }
