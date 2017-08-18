@@ -13,76 +13,90 @@ var SERVICE_PAGE_INFO = "pageInfo";
 var RENDER_MODE_DISPLAY = "display";
 
 var PdfRendererPlugin = {
-    display: function(filePath, callback){
-        cordova.exec(callback, function(err){
-            if(!err.message){
-                callback("Unexpected Exception has occurred while attempting to display your PDF.");
-            }
-            callback(err.message);
-        }, PLUGIN_NAME, SERVICE_OPEN, [filePath]);
+    display: function(filePath, onSuccess, onFailure){
+        if(typeof filePath !== "string"){
+            throw new Error ("Filepath argument must be of type 'string'");
+        }
+        if(typeof onSuccess !== "function"){
+            throw new Error ("onSuccess callback must be of type 'function'");
+        }
+        if(typeof onFailure !== "function"){
+            throw new Error ("onFailure callback must be of type 'function'");
+        }
+        cordova.exec(onSuccess, onFailure, PLUGIN_NAME, SERVICE_OPEN, [filePath]);
     },
 
-    renderPage: function(pageNo, callback){
-        cordova.exec(callback, function(err){
-            if(!err.message){
-                callback("Unexpected Exception has occurred while attempting to render the requested page.");
-            }
-            callback(err.message);
-        }, PLUGIN_NAME, SERVICE_RENDER_PAGE, [pageNo]);
+    renderPage: function(pageNo, onSuccess, onFailure){
+        if(typeof pageNo !== "number"){
+            throw new Error ("Page Number argument must be of type 'number'");
+        }
+        if(typeof onSuccess !== "function"){
+            throw new Error ("onSuccess callback must be of type 'function'");
+        }
+        if(typeof onFailure !== "function"){
+            throw new Error ("onFailure callback must be of type 'function'");
+        }
+        cordova.exec(onSuccess, onFailure, PLUGIN_NAME, SERVICE_RENDER_PAGE, [pageNo]);
     },
 
-    renderNextPage: function(callback){
-        cordova.exec(callback, function(err){
-            if(!err.message){
-                callback("Unexpected Exception has occurred while attempting to render the requested page.");
-            }
-            callback(err.message);
-        }, PLUGIN_NAME, SERVICE_NEXT_PAGE, []);
+    renderNextPage: function(onSuccess, onFailure){
+        if(typeof onSuccess !== "function"){
+            throw new Error ("onSuccess callback must be of type 'function'");
+        }
+        if(typeof onFailure !== "function"){
+            throw new Error ("onFailure callback must be of type 'function'");
+        }
+        cordova.exec(onSuccess, onFailure, PLUGIN_NAME, SERVICE_NEXT_PAGE, []);
     },
 
-    renderPreviousPage: function(callback){
-        cordova.exec(callback, function(err){
-            if(!err.message){
-                callback("Unexpected Exception has occurred while attempting to render the requested page.");
-            }
-            callback(err.message);
-        }, PLUGIN_NAME, SERVICE_PREVIOUS_PAGE, []);
+    renderPreviousPage: function(onSuccess, onFailure){
+        if(typeof onSuccess !== "function"){
+            throw new Error ("onSuccess callback must be of type 'function'");
+        }
+        if(typeof onFailure !== "function"){
+            throw new Error ("onFailure callback must be of type 'function'");
+        }
+        cordova.exec(onSuccess, onFailure, PLUGIN_NAME, SERVICE_PREVIOUS_PAGE, []);
     },
 
-    close: function(callback){
-        cordova.exec(callback, function(err){
-            if(!err.message){
-                callback("Unexpected Exception has occurred while attempting to close the PDF renderer.");
-            }
-            callback(err.message);
-        }, PLUGIN_NAME, SERVICE_CLOSE, []);
+    close: function(onSuccess, onFailure){
+        if(typeof onSuccess !== "function"){
+            throw new Error ("onSuccess callback must be of type 'function'");
+        }
+        if(typeof onFailure !== "function"){
+            throw new Error ("onFailure callback must be of type 'function'");
+        }
+        cordova.exec(onSuccess, onFailure, PLUGIN_NAME, SERVICE_CLOSE, []);
     },
 
-    getPageInfo: function(callback){
-        cordova.exec(callback, function(err){
-            if(!err.message){
-                callback("Unexpected Exception has occurred while attempting to request page information.");
-            }
-            callback(err.message);
-        }, PLUGIN_NAME, SERVICE_PAGE_INFO, []);
+    getPageInfo: function(onSuccess, onFailure){
+        if(typeof onSuccess !== "function"){
+            throw new Error ("onSuccess callback must be of type 'function'");
+        }
+        if(typeof onFailure !== "function"){
+            throw new Error ("onFailure callback must be of type 'function'");
+        }
+        cordova.exec(onSuccess, onFailure, PLUGIN_NAME, SERVICE_PAGE_INFO, []);
     },
 
-    getCurrentPageNumber: function(callback){
-        cordova.exec(callback, function(err){
-            if(!err.message){
-                callback("Unexpected Exception has occurred while attempting to request the current page number.");
-            }
-            callback(err.message);
-        }, PLUGIN_NAME, SERVICE_PAGE_NUMBER, []);
+    getCurrentPageNumber: function(onSuccess, onFailure){
+        if(typeof onSuccess !== "function"){
+            throw new Error ("onSuccess callback must be of type 'function'");
+        }
+        if(typeof onFailure !== "function"){
+            throw new Error ("onFailure callback must be of type 'function'");
+        }
+        cordova.exec(onSuccess, onFailure, PLUGIN_NAME, SERVICE_PAGE_NUMBER, []);
     },
 
-    getPageCount: function(callback){
-        cordova.exec(callback, function(err){
-            if(!err.message){
-                callback("Unexpected Exception has occurred while attempting to request the current page count.");
-            }
-            callback(err.message);
-        }, PLUGIN_NAME, SERVICE_PAGE_COUNT, []);
+    getPageCount: function(onSuccess, onFailure){
+        if(typeof onSuccess !== "function"){
+            throw new Error ("onSuccess callback must be of type 'function'");
+        }
+        if(typeof onFailure !== "function"){
+            throw new Error ("onFailure callback must be of type 'function'");
+        }
+        cordova.exec(onSuccess, onFailure, PLUGIN_NAME, SERVICE_PAGE_COUNT, []);
     }
 };
 

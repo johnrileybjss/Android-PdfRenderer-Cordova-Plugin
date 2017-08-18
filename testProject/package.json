@@ -20,8 +20,5 @@
     "platforms": [
       "android"
     ]
-  },
-  "scripts": {
-    "test:android": "cordova-paramedic --cleanUpAfterRun --verbose --platform android --plugin ."
   }
 }

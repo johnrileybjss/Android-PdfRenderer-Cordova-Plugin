@@ -8,7 +8,7 @@ var app = {
 
     showPDFInImage: function(data){
         if(!data){
-            throw "Bitmap Data is undefined.";
+            throw new Error("Bitmap Data is undefined.");
             return;
         }
 
@@ -16,7 +16,7 @@ var app = {
 
         var image = document.getElementById("image-display");
         if(!image){
-            throw "Could not find image element to display Bitmap.";
+            throw new Error("Could not find image element to display Bitmap.");
             return;
         }
 
@@ -26,13 +26,13 @@ var app = {
 
     updatePageCount: function(currentPage, pageCount){
         if(currentPage < 0 || pageCount < 0){
-            throw "Invalid values found in page information.";
+            throw new Error("Invalid values found in page information.");
             return;
         }
 
         var text = document.getElementById("page-count");
         if(!text){
-            throw "Could not find page count element to display page numbers.";
+            throw new Error("Could not find page count element to display page numbers.");
             return;
         }
 
@@ -46,11 +46,17 @@ var app = {
 
                 window.PdfRendererPlugin.getPageInfo(function(pageData){
                     app.updatePageCount(pageData.pageNumber, pageData.pageCount);
+                },
+                function(err){
+                    console.log(err);
                 });
+            },
+            function(err){
+                console.log(err);
             });
         }
         catch(err){
-            console.log(err.message);
+            console.log(err);
         }
     },
 
@@ -61,11 +67,17 @@ var app = {
 
                 window.PdfRendererPlugin.getPageInfo(function(pageData){
                     app.updatePageCount(pageData.pageNumber, pageData.pageCount);
+                },
+                function(err){
+                    console.log(err);
                 });
+            },
+            function(err){
+                console.log(err);
             });
         }
         catch(err){
-            console.log(err.message);
+            console.log(err);
         }
     },
 
@@ -76,11 +88,17 @@ var app = {
 
                 window.PdfRendererPlugin.getPageInfo(function(pageData){
                     app.updatePageCount(pageData.pageNumber, pageData.pageCount);
+                },
+                function(err){
+                    console.log(err);
                 });
+            },
+            function(err){
+                console.log(err);
             });
         }
         catch(err){
-            console.log(err.message);
+            console.log(err);
         }
     },
 
