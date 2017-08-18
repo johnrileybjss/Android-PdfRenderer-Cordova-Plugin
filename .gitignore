@@ -25,5 +25,6 @@ out
 # workspace.xml
 /.idea
 
-# npm debug log
+# debug logs
+/**/debug.log
 /**/npm-debug.log
