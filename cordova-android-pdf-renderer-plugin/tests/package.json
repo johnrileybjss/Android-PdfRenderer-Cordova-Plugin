@@ -1,0 +1,7 @@
+{
+  "name": "com.bjss.pdf.tests",
+  "displayName": "CordovaPDFRendererPluginTests",
+  "version": "1.0.0",
+  "main": "tests.js",
+  "author": "John Riley"
+}

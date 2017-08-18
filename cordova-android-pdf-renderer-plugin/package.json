@@ -2,13 +2,12 @@
     "name": "com.bjss.pdf",
     "displayName": "CordovaPDFRendererPlugin",
     "version": "1.0.0",
-    "description": "A sample Apache Cordova application that responds to the deviceready event.",
+    "description": "A sample Cordova plugin that surfaces the functionality of the Android PDFRenderer API.",
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "author": "Apache Cordova Team",
-    "license": "Apache-2.0",
+    "author": "john.riley@bjss.com",
     "dependencies": {
         "cordova": "^7.0.1",
         "cordova-android": "^6.2.3",
