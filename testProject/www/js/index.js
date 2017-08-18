@@ -6,6 +6,19 @@ var app = {
         document.addEventListener('deviceready', this.onDeviceReady.bind(this), false);
     },
 
+    setErrorMessage: function(msg){
+        if(msg === undefined || msg === null){
+            return;
+        }
+
+        var text = document.getElementById("error-message");
+        if(!text){
+            return;
+        }
+
+        text.innerHTML = msg;
+    },
+
     showPDFInImage: function(data){
         if(!data){
             throw new Error("Bitmap Data is undefined.");
@@ -46,17 +59,21 @@ var app = {
 
                 window.PdfRendererPlugin.getPageInfo(function(pageData){
                     app.updatePageCount(pageData.pageNumber, pageData.pageCount);
+                    app.setErrorMessage("");
                 },
                 function(err){
                     console.log(err);
+                    app.setErrorMessage(err);
                 });
             },
             function(err){
                 console.log(err);
+                app.setErrorMessage(err);
             });
         }
         catch(err){
             console.log(err);
+            app.setErrorMessage(err);
         }
     },
 
@@ -67,17 +84,21 @@ var app = {
 
                 window.PdfRendererPlugin.getPageInfo(function(pageData){
                     app.updatePageCount(pageData.pageNumber, pageData.pageCount);
+                    app.setErrorMessage("");
                 },
                 function(err){
                     console.log(err);
+                    app.setErrorMessage(err);
                 });
             },
             function(err){
                 console.log(err);
+                app.setErrorMessage(err);
             });
         }
         catch(err){
             console.log(err);
+            app.setErrorMessage(err);
         }
     },
 
@@ -88,17 +109,21 @@ var app = {
 
                 window.PdfRendererPlugin.getPageInfo(function(pageData){
                     app.updatePageCount(pageData.pageNumber, pageData.pageCount);
+                    app.setErrorMessage("");
                 },
                 function(err){
                     console.log(err);
+                    app.setErrorMessage(err);
                 });
             },
             function(err){
                 console.log(err);
+                app.setErrorMessage(err);
             });
         }
         catch(err){
             console.log(err);
+            app.setErrorMessage(err);
         }
     },
 

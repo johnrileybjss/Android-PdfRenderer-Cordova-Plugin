@@ -132,7 +132,7 @@ public class PdfRendererPlugin extends CordovaPlugin {
             if(pageCount == 0)
                 throw new PDFRendererException("No Pages available to display.");
             else if(mPageNo + 1 >= pageCount)
-                throw new PDFRendererException("Requested page number is greater than the available number of pages.");
+                throw new PDFRendererException("The requested page does not exist.");
 
             closeCurrentPage();
 
@@ -165,7 +165,7 @@ public class PdfRendererPlugin extends CordovaPlugin {
             if(pageCount == 0)
                 throw new PDFRendererException("No Pages available to display.");
             else if(mPageNo - 1 < 0)
-                throw new PDFRendererException("Requested page number is less than zero.");
+                throw new PDFRendererException("The requested page does not exist.");
 
             closeCurrentPage();
 
@@ -202,10 +202,10 @@ public class PdfRendererPlugin extends CordovaPlugin {
             throw new PDFRendererException("The requested document has no pages to display.");
 
         if(index < 0)
-            throw new PDFRendererException("The requested page number is less than zero.");
+            throw new PDFRendererException("The requested page does not exist.");
 
         if(index >= pageCount)
-            throw new PDFRendererException("The requested page number is greater than the number of available pages.");
+            throw new PDFRendererException("The requested page does not exist.");
 
         currentPage = renderer.openPage(index);
     }
