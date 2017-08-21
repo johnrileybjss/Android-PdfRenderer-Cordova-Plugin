@@ -142,7 +142,6 @@ exports.defineAutoTests = function () {
         });
         it("should return a default JSON object if no document has been loaded.", function() {
             var expectedOutput = {
-                filePath: "",
                 pageNumber: 0,
                 pageCount: 0
             };
