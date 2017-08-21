@@ -57,6 +57,7 @@ var app = {
             window.PdfRendererPlugin.display(testFilePath, function(data){
                 app.showPDFInImage(data);
 
+                //Update the Page Count Label
                 window.PdfRendererPlugin.getPageInfo(function(pageData){
                     app.updatePageCount(pageData.pageNumber, pageData.pageCount);
                     app.setErrorMessage("");
@@ -82,6 +83,7 @@ var app = {
             window.PdfRendererPlugin.renderPreviousPage(function(data){
                 app.showPDFInImage(data);
 
+                //Update the Page Count Label
                 window.PdfRendererPlugin.getPageInfo(function(pageData){
                     app.updatePageCount(pageData.pageNumber, pageData.pageCount);
                     app.setErrorMessage("");
@@ -107,6 +109,7 @@ var app = {
             window.PdfRendererPlugin.renderNextPage(function(data){
                 app.showPDFInImage(data);
 
+                //Update the Page Count Label
                 window.PdfRendererPlugin.getPageInfo(function(pageData){
                     app.updatePageCount(pageData.pageNumber, pageData.pageCount);
                     app.setErrorMessage("");
