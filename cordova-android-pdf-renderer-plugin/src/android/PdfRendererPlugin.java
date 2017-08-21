@@ -134,11 +134,19 @@ public final class PdfRendererPlugin extends CordovaPlugin
             callbackContext.success(bitmapAsBytes);
             return true;
         }
+        catch(JSONException jsonException){
+            String errorMessage = jsonException.getMessage();
+            if(errorMessage == null)
+                errorMessage = "Unknown JSONException has occurred";
+
+            callbackContext.error(errorMessage);
+            return false;
+        }
         catch(IOException ioException)
         {
             String errorMessage = ioException.getMessage();
             if(errorMessage == null)
-                errorMessage = "Unknown Exception has occurred";
+                errorMessage = "Unknown IOException has occurred";
 
             callbackContext.error(errorMessage);
             return false;

@@ -7,7 +7,7 @@
     <repo>https://github.com/johnrileybjss/Android-PdfRenderer-Cordova-Plugin</repo>
 
     <platform name="android">
-        <js-module src="www/js/PdfRendererPlugin.js" name="PdfRendererPlugin">
+        <js-module src="www/js/pdf_renderer_plugin.js" name="PdfRendererPlugin">
             <clobbers target="PdfRendererPlugin"/>
         </js-module>
 

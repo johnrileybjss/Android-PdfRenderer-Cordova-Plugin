@@ -6,6 +6,7 @@ var app = {
         document.addEventListener('deviceready', this.onDeviceReady.bind(this), false);
     },
 
+    // Displays a Red Error Message on screen
     setErrorMessage: function(msg){
         if(msg === undefined || msg === null){
             return;
@@ -19,6 +20,7 @@ var app = {
         text.innerHTML = msg;
     },
 
+    // Displays the Bitmap Data in an image element
     showPDFInImage: function(data){
         if(!data){
             throw new Error("Bitmap Data is undefined.");
@@ -37,6 +39,7 @@ var app = {
         document.body.appendChild(image);
     },
 
+    // Displays the Current Page Number and Number of Pages in the provided label element
     updatePageCount: function(currentPage, pageCount){
         if(currentPage < 0 || pageCount < 0){
             throw new Error("Invalid values found in page information.");
