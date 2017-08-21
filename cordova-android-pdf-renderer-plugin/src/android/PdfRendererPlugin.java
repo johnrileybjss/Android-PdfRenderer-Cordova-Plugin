@@ -297,9 +297,12 @@ public class PdfRendererPlugin extends CordovaPlugin {
 
             output.flush();
         }
+        catch(FileNotFoundException fnfe){
+            exception = new FileNotFoundException("Could not find the requested file: " + filePath);
+        }
         catch(IOException io){
             // Save for later - ensure filestreams are closed before throwing exception
-            exception = io;
+            exception = new IOException("Unexpected IOException has occurred: " + io.getMessage());
         }
         finally{
             if(output != null)

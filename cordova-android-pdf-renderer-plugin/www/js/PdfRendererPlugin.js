@@ -26,19 +26,6 @@ var PdfRendererPlugin = {
         cordova.exec(onSuccess, onFailure, PLUGIN_NAME, SERVICE_OPEN, [filePath]);
     },
 
-    renderPage: function(pageNo, onSuccess, onFailure){
-        if(typeof pageNo !== "number"){
-            throw new Error ("Page Number argument must be of type 'number'");
-        }
-        if(typeof onSuccess !== "function"){
-            throw new Error ("onSuccess callback must be of type 'function'");
-        }
-        if(typeof onFailure !== "function"){
-            throw new Error ("onFailure callback must be of type 'function'");
-        }
-        cordova.exec(onSuccess, onFailure, PLUGIN_NAME, SERVICE_RENDER_PAGE, [pageNo]);
-    },
-
     renderNextPage: function(onSuccess, onFailure){
         if(typeof onSuccess !== "function"){
             throw new Error ("onSuccess callback must be of type 'function'");

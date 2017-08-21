@@ -26,34 +26,15 @@ exports.defineAutoTests = function () {
                 window.PdfRendererPlugin.display("test", function() {}, 42);
             }).toThrowError("onFailure callback must be of type 'function'");
         });
-    });
-
-    describe('PdfRendererPlugin.renderPage', function(){
-        it('should be defined', function(){
-            expect(window.PdfRendererPlugin.renderPage).toBeDefined();
+        it("should return an error through the onFailure callback if the file path does not have a pdf extension", function() {
+            window.PdfRendererPlugin.display("test.txt", function() {}, function(error) {
+                expect(error).toEqual('Invalid File Extension provided to Pdf Renderer Service: txt');
+            });
         });
-        it('should be a function', function(){
-            expect(typeof window.PdfRendererPlugin.renderPage).toEqual("function");
-        });
-        it("should throw an Error with no arguments", function() {
-            expect(function() {
-                window.PdfRendererPlugin.renderPage();
-            }).toThrowError("Page Number argument must be of type 'number'");
-        });
-        it("should throw an Error if the page number argument is not a number", function() {
-            expect(function() {
-                window.PdfRendererPlugin.renderPage("test", function() {}, function() {});
-            }).toThrowError("Page Number argument must be of type 'number'");
-        });
-        it("should throw an Error if the onSuccess callback is not a function", function() {
-            expect(function() {
-                window.PdfRendererPlugin.renderPage(42, 42, function() {});
-            }).toThrowError("onSuccess callback must be of type 'function'");
-        });
-        it("should throw an Error if the onFailure callback is not a function", function() {
-            expect(function() {
-                window.PdfRendererPlugin.renderPage(42, function() {}, 42);
-            }).toThrowError("onFailure callback must be of type 'function'");
+        it("should return an error through the onFailure callback if the file cannot be found", function() {
+            window.PdfRendererPlugin.display("test.pdf", function() {}, function(error) {
+                expect(error).toEqual('Could not find the requested file: test.pdf');
+            });
         });
     });
 
@@ -79,6 +60,11 @@ exports.defineAutoTests = function () {
                 window.PdfRendererPlugin.renderNextPage(function() {}, 42);
             }).toThrowError("onFailure callback must be of type 'function'");
         });
+        it("should return an error through the onFailure callback if no pages are available to display", function() {
+            window.PdfRendererPlugin.renderNextPage(function() {}, function(error) {
+                expect(error).toEqual('No Pages available to display.');
+            });
+        });
     });
 
     describe('PdfRendererPlugin.renderPreviousPage', function(){
@@ -102,6 +88,11 @@ exports.defineAutoTests = function () {
             expect(function() {
                 window.PdfRendererPlugin.renderPreviousPage(function() {}, 42);
             }).toThrowError("onFailure callback must be of type 'function'");
+        });
+        it("should return an error through the onFailure callback if no pages are available to display", function() {
+            window.PdfRendererPlugin.renderPreviousPage(function() {}, function(error) {
+                expect(error).toEqual('No Pages available to display.');
+            });
         });
     });
     describe('PdfRendererPlugin.close', function(){
@@ -149,6 +140,17 @@ exports.defineAutoTests = function () {
                 window.PdfRendererPlugin.getPageInfo(function() {}, 42);
             }).toThrowError("onFailure callback must be of type 'function'");
         });
+        it("should return a default JSON object if no document has been loaded.", function() {
+            var expectedOutput = {
+                filePath: "",
+                pageNumber: 0,
+                pageCount: 0
+            };
+
+            window.PdfRendererPlugin.getPageInfo(function(pageInformation) {
+                expect(pageInformation).toEqual(expectedOutput);
+            }, function() {});
+        });
     });
     describe('PdfRendererPlugin.getCurrentPageNumber', function(){
         it('should be defined', function(){
@@ -172,6 +174,11 @@ exports.defineAutoTests = function () {
                 window.PdfRendererPlugin.getCurrentPageNumber(function() {}, 42);
             }).toThrowError("onFailure callback must be of type 'function'");
         });
+        it("should return a zero value if no document has been loaded.", function() {
+            window.PdfRendererPlugin.getCurrentPageNumber(function(pageNo) {
+                expect(pageNo).toBe(0);
+            }, function() {});
+        });
     });
     describe('PdfRendererPlugin.getPageCount', function(){
         it('should be defined', function(){
@@ -194,6 +201,11 @@ exports.defineAutoTests = function () {
             expect(function() {
                 window.PdfRendererPlugin.getPageCount(function() {}, 42);
             }).toThrowError("onFailure callback must be of type 'function'");
+        });
+        it("should return a zero value if no document has been loaded.", function() {
+            window.PdfRendererPlugin.getPageCount(function(pageCount) {
+                expect(pageCount).toBe(0);
+            }, function() {});
         });
     });
 }
