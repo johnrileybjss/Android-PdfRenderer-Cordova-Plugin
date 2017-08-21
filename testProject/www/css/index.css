@@ -8,9 +8,13 @@
 }
 
 .padded {
-    padding: 8px;
+    padding: 4px;
 }
 
 .clearFix {
     clear: both;
+}
+
+.red-text {
+    color: red;
 }

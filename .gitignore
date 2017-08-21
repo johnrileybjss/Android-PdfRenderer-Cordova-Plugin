@@ -24,3 +24,7 @@ out
 
 # workspace.xml
 /.idea
+
+# debug logs
+/**/debug.log
+/**/npm-debug.log

@@ -28,326 +28,366 @@ import android.os.ParcelFileDescriptor;
 
 import android.util.Log;
 
-//TODO - Break out Exceptions/Callback Context calls --> ensure callback context is used only ONCE
 /**
  * This class handles a pdf file called from JavaScript and converts a selected page (default is first) to a byte array representing a bitmap.
  */
-public class PdfRendererPlugin extends CordovaPlugin {
+public final class PdfRendererPlugin extends CordovaPlugin {
 
-    private static final String LOG_TAG = "PdfRendererPlugin";
+  private static final String LOG_TAG = "PdfRendererPlugin";
 
-    private ParcelFileDescriptor fileDescriptor = null;
-    private PdfRenderer renderer = null;
-    private Page currentPage = null;
+  private static final String ACTION_OPEN = "open";
+  private static final String ACTION_CLOSE = "close";
+  private static final String ACTION_NEXT_PAGE = "nextPage";
+  private static final String ACTION_PREVIOUS_PAGE = "previousPage";
+  private static final String ACTION_PAGE_INFO = "pageInfo";
+  private static final String ACTION_PAGE_COUNT = "pageCount";
+  private static final String ACTION_PAGE_NUMBER = "pageNumber";
 
-    private int mWidth = 400, mHeight = 600, mPageNo = 0;
-    private String mRenderMode = "display";
-    private String mFilePath = "";
+  private ParcelFileDescriptor fileDescriptor = null;
+  private PdfRenderer renderer = null;
+  private Page currentPage = null;
 
-    private Context context;
+  private int renderWidth = 400,
+          renderHeight = 600,
+          currentPageNumber = 0;
 
-    @Override
-    public void initialize(CordovaInterface cordova, CordovaWebView webView){
-        super.initialize(cordova, webView);
+  private String currentRenderMode = "display";
 
-        context = cordova.getActivity().getApplicationContext();
+  private Context context;
+
+  @Override
+  public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+    super.initialize(cordova, webView);
+
+    context = cordova.getActivity().getApplicationContext();
+  }
+
+  @Override
+  public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+    //No Switch -> src 1.6
+    if (action.equals(ACTION_OPEN)) { // Opens the requested file
+      return executeOpen(args, callbackContext);
+    } else if (action.equals(ACTION_NEXT_PAGE)) { // Displays the next page for the current file if available
+      return executeNextPage(callbackContext);
+    } else if (action.equals(ACTION_PREVIOUS_PAGE)) { //Displays the previous page for the current file if available
+      return executePreviousPage(callbackContext);
+    } else if (action.equals(ACTION_PAGE_INFO)) { // Returns a JSON object with the page information of the current page
+      callbackContext.success(getPageInfo());
+      return true;
+    } else if (action.equals(ACTION_PAGE_COUNT)) { // Returns the number of pages in the current document
+      callbackContext.success(getPageCount());
+      return true;
+    } else if (action.equals(ACTION_PAGE_NUMBER)) { // Returns the current page number of the current document
+      callbackContext.success(getCurrentPageNo());
+      return true;
+    } else if (action.equals(ACTION_CLOSE)) { // Closes the current document
+      closeRenderer();
+      callbackContext.success();
+      return true;
     }
 
-    @Override
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-        //No Switch -> src 1.6
-        if(action.equals("open")){
-            return executeOpen(args, callbackContext);
-        }
-        else if(action.equals("nextPage")){
-            return executeNextPage(callbackContext);
-        }
-        else if(action.equals("previousPage")){
-            return executePreviousPage(callbackContext);
-        }
-        else if(action.equals("pageInfo")){
-            callbackContext.success(this.getPageInfo());
-            return true;
-        }
-        else if(action.equals("pageCount")){
-            callbackContext.success(this.getPageCount());
-            return true;
-        }
-        else if(action.equals("pageNumber")){
-            callbackContext.success(this.getCurrentPageNo());
-            return true;
-        }
-        else if(action.equals("close")){
-            this.closeRenderer();
-            callbackContext.success();
-            return true;
-        }
+    return false;
+  }
 
-        return false;
+  // Initializes the Renderer and opens the file
+  private final boolean executeOpen(final JSONArray args, final CallbackContext callbackContext) {
+    try {
+      if (args.length() < 1) {
+        throw new PDFRendererException("No arguments provided. Exiting process.");
+      }
+      if (args.length() > 2) {
+        renderWidth = args.getInt(1);
+        renderHeight = args.getInt(2);
+      }
+
+      // Initialize the PDFRenderer using the requested file
+      String filePath = args.getString(0);
+      initializeRenderer(filePath);
+
+      // Open the First page of the PDF
+      openPage(0);
+
+      // Convert the PDF bitmap into a byte array
+      byte[] bitmapAsBytes = renderBitmapAsBytes();
+
+      callbackContext.success(bitmapAsBytes);
+      return true;
+    } catch (JSONException jsonException) {
+      String errorMessage = jsonException.getMessage();
+      if (errorMessage == null) {
+        errorMessage = "Unknown JSONException has occurred";
+      }
+
+      callbackContext.error(errorMessage);
+      return false;
+    } catch (IOException ioException) {
+      String errorMessage = ioException.getMessage();
+      if (errorMessage == null) {
+        errorMessage = "Unknown IOException has occurred";
+      }
+
+      callbackContext.error(errorMessage);
+      return false;
+    }
+  }
+
+  // Closes the current page and opens the next page (if available)
+  private final boolean executeNextPage(final CallbackContext callbackContext) {
+    try {
+      int pageCount = getPageCount();
+      if (pageCount == 0) {
+        throw new PDFRendererException("No Pages available to display.");
+      } else if (currentPageNumber + 1 >= pageCount) {
+        throw new PDFRendererException("The requested page does not exist.");
+      }
+
+      closeCurrentPage();
+
+      // Open the next page and increment the page number variable.
+      openPage(currentPageNumber + 1);
+
+      // Convert the PDF bitmap into a byte array
+      byte[] bitmapAsBytes = renderBitmapAsBytes();
+
+      callbackContext.success(bitmapAsBytes);
+      return true;
+    } catch (IOException ioException) {
+      String errorMessage = ioException.getMessage();
+      if (errorMessage == null) {
+        errorMessage = "Unknown Exception has occurred";
+      }
+
+      callbackContext.error(errorMessage);
+      return false;
+    }
+  }
+
+  // Closes the current page and opens the previous page (if available)
+  private final boolean executePreviousPage(final CallbackContext callbackContext) {
+    try {
+      int pageCount = getPageCount();
+      if (pageCount == 0) {
+        throw new PDFRendererException("No Pages available to display.");
+      } else if (currentPageNumber - 1 < 0) {
+        throw new PDFRendererException("The requested page does not exist.");
+      }
+
+      closeCurrentPage();
+
+      // Open the Previous Page and decrement the page number variable
+      openPage(currentPageNumber - 1);
+
+      // Convert the PDF bitmap into a byte array
+      byte[] bitmapAsBytes = renderBitmapAsBytes();
+
+      callbackContext.success(bitmapAsBytes);
+      return true;
+    } catch (IOException ioException) {
+      String errorMessage = ioException.getMessage();
+      if (errorMessage == null) {
+        errorMessage = "Unknown Exception has occurred";
+      }
+
+      callbackContext.error(errorMessage);
+      return false;
+    }
+  }
+
+  private final int getPageCount() {
+    if (renderer == null) {
+      return 0;
     }
 
-    // Initializes the Renderer and opens the file
-    private boolean executeOpen(JSONArray args, CallbackContext callbackContext){
-        String filePath = "";
-        try{
-            if(args.length() < 1){
-                Log.e(LOG_TAG, "No arguments provided. Exiting process.");
-                callbackContext.error("No arguments provided. Exiting process.");
-                return true;
-            }
-            if(args.length() > 2){
-                mWidth = args.getInt(1);
-                mHeight = args.getInt(2);
-            }
+    return renderer.getPageCount();
+  }
 
-            filePath = args.getString(0);
-        }
-        catch(JSONException je){
-            String msg = je.getMessage();
-            if(msg == null)
-                msg = "Unknown JSONException has occurred";
-            Log.e(LOG_TAG, msg);
-        }
+  private final int getCurrentPageNo() {
+    return currentPageNumber;
+  }
 
-        this.initializeRenderer(filePath, callbackContext);
+  private final JSONObject getPageInfo() throws JSONException {
+    int pageNumber = getCurrentPageNo();
+    int pageCount = getPageCount();
 
-        boolean isPageOpen = this.openPage(0, callbackContext);
-        if(isPageOpen){
-            Bitmap bitmap = getBitmap(mWidth, mHeight);
-            mPageNo = 0;
-            mFilePath = filePath;
-            this.sendBitmapAsBytes(0, bitmap, callbackContext);
-        }
-        return true;
+    JSONObject output = new JSONObject();
+
+    output.put("pageNumber", pageNumber);
+    output.put("pageCount", pageCount);
+
+    return output;
+  }
+
+  // Initializes the PDF Renderer using a file descriptor based on the file at the provided path
+  private final void initializeRenderer(final String filePath) throws IOException {
+    // Set the renderer to null in case an error occurs while initializing the renderer
+    renderer = null;
+
+    initializeFileDescriptor(filePath);
+
+    renderer = new PdfRenderer(fileDescriptor);
+  }
+
+  // Initializes the file descriptor if the file path is valid
+  private final void initializeFileDescriptor(final String filePath) throws IOException {
+    // Set the file descriptor to null in case an error occurs while opening the file descriptor
+    fileDescriptor = null;
+
+    if (filePath == null || filePath.length() < 1) {
+      throw new FileNotFoundException("The file path provided is not a valid file path.");
     }
 
-    // Closes the current page and opens the next page (if available)
-    private boolean executeNextPage(CallbackContext callbackContext){
-        int pageCount = getPageCount();
-        if(pageCount == 0 || mPageNo + 1 >= pageCount)
-            return false;
+    String[] pathSegments = filePath.split("\\.");
 
-        closeCurrentPage();
-
-        boolean isPageOpen = this.openPage(mPageNo + 1, callbackContext);
-        if(isPageOpen){
-            ++mPageNo;
-            Bitmap bitmap = getBitmap(mWidth, mHeight);
-            this.sendBitmapAsBytes(mPageNo, bitmap, callbackContext);
-        }
-
-        return true;
+    int numberOfPathSegments = pathSegments.length;
+    if (numberOfPathSegments < 2) {
+      throw new FileNotFoundException("The file path provided is not a valid file path: " + filePath);
     }
 
-    // Closes the current page and opens the previous page (if available)
-    private boolean executePreviousPage(CallbackContext callbackContext){
-        int pageCount = getPageCount();
-        if(pageCount == 0 || mPageNo - 1 < 0)
-            return false;
-
-        closeCurrentPage();
-
-        boolean isPageOpen = this.openPage(mPageNo - 1, callbackContext);
-        if(isPageOpen){
-            --mPageNo;
-            Bitmap bitmap = getBitmap(mWidth, mHeight);
-            this.sendBitmapAsBytes(mPageNo, bitmap, callbackContext);
-        }
-
-        return true;
+    String fileExtension = pathSegments[numberOfPathSegments - 1];
+    if (!fileExtension.equals("pdf")) {
+      throw new FileFormatException("Invalid File Extension provided to Pdf Renderer Service: " + fileExtension);
     }
 
-    private boolean openPage(int index, CallbackContext callbackContext){
-        currentPage = null;
+    fileDescriptor = openFileDescriptor(filePath);
+  }
 
-        if(renderer == null){
-            Log.e(LOG_TAG, "Renderer was found to be null.");
-            callbackContext.error("An unknown error has occurred while attempting to render your document.");
-            return false;
-        }
+  private final void openPage(final int index) throws IOException {
+    // Set the page to null in case an error occurs while opening the page
+    currentPage = null;
 
-        int pageCount = getPageCount();
-        if(pageCount < 1) {
-            Log.e(LOG_TAG, "Requested document has no pages to display.");
-            callbackContext.error("Requested document has no pages to display.");
-            return false;
-        }
-
-        if(index >= pageCount || index < 0) {
-            Log.e(LOG_TAG, String.format("No page was found at page number %d/%d", index, pageCount));
-            callbackContext.error(String.format("No page was found at page number %d/%d", index, pageCount));
-            return false;
-        }
-
-        currentPage = renderer.openPage(index);
-        return true;
+    if (renderer == null) {
+      throw new PDFRendererException("An unexpected error has occurred while attempting to render your document - PDFRenderer was properly initialized.");
     }
 
-    // Converts a bitmap object to a byte array and sends the data back to the callback context
-    private void sendBitmapAsBytes(int index, Bitmap bitmap, CallbackContext callbackContext){
-        if(renderer == null) {
-            Log.e(LOG_TAG, "Renderer was not properly initialized.");
-            callbackContext.error("Renderer was not properly initialized.");
-            return;
-        }
-
-        if(currentPage == null) {
-            Log.e(LOG_TAG, "Requested page could not be rendered.");
-            callbackContext.error("Requested page could not be rendered.");
-            return;
-        }
-
-        int renderMode = mRenderMode.equals("print") ? Page.RENDER_MODE_FOR_PRINT : Page.RENDER_MODE_FOR_DISPLAY;
-        currentPage.render(bitmap, null, null, renderMode);
-
-        byte[] output = toByteArray(bitmap);
-        if(output == null || output.length < 1) {
-            Log.e(LOG_TAG, "Bitmap Error has occurred: Invalid Output Format Detected");
-            callbackContext.error("Bitmap Error has occurred: Invalid Output Format Detected");
-        }
-        else {
-            Log.i(LOG_TAG, "Bitmap Conversion Successful");
-            callbackContext.success(output);
-        }
+    int pageCount = getPageCount();
+    if (pageCount < 1) {
+      throw new PDFRendererException("The requested document has no pages to display.");
     }
 
-    // Initializes the PDF Renderer using a file descriptor based on the file at the provided path
-    private void initializeRenderer(String filePath, CallbackContext callbackContext){
-        renderer = null;
-
-        try {
-            initializeFileDescriptor(filePath, callbackContext);
-
-            if(fileDescriptor != null) {
-                renderer = new PdfRenderer(fileDescriptor);
-            }
-            else{
-                Log.e(LOG_TAG, "An unknown error has occurred with the File Descriptor.");
-                callbackContext.error("An unknown error has occurred with the File Descriptor.");
-            }
-        }
-        catch(IOException io){
-            String msg = io.getMessage();
-            if(msg == null)
-                msg = "An error has occurred while loading the requested file.";
-
-            Log.e(LOG_TAG, msg);
-            callbackContext.error(msg);
-        }
+    if (index < 0) {
+      throw new PDFRendererException("The requested page does not exist.");
     }
 
-    private void closeCurrentPage() {
-        if(currentPage != null){
-            currentPage.close();
-        }
+    if (index >= pageCount) {
+      throw new PDFRendererException("The requested page does not exist.");
     }
 
-    private void closeRenderer() {
-        if(renderer == null) {
-            Log.w(LOG_TAG, "Attempted to close null renderer. Skipping operation.");
-            return;
-        }
+    currentPage = renderer.openPage(index);
 
-        renderer.close();
+    currentPageNumber = index;
+  }
+
+  // Copies the File at the specified path from the assets folder and opens a ParcelFileDescriptor using that file
+  private final ParcelFileDescriptor openFileDescriptor(final String filePath) throws IOException {
+    File assetFile = loadFileFromAssets(filePath);
+
+    return ParcelFileDescriptor.open(assetFile, ParcelFileDescriptor.MODE_READ_ONLY);
+  }
+
+  // Loads the specified file from the assets folder to a usable path
+  private final File loadFileFromAssets(final String filePath) throws IOException {
+    File outputFile = null;
+    InputStream inputStream = null;
+    FileOutputStream outputStream = null;
+
+    IOException exception = null;
+    try {
+      outputFile = new File(context.getFilesDir(), filePath);
+
+      // Loads the Asset File into an Input Stream
+      inputStream = context.getAssets().open("www/assets/" + filePath);
+
+      // Creates an output stream for the temporary copy of the asset file
+      outputStream = context.openFileOutput(outputFile.getName(), Context.MODE_PRIVATE);
+
+      // Write the PDF Data to a temporary output file
+      byte[] buffer = new byte[1024];
+      int currentData;
+      while ((currentData = inputStream.read(buffer)) != -1) {
+        outputStream.write(buffer, 0, currentData);
+      }
+
+      outputStream.flush();
+    } catch (FileNotFoundException fileNotFoundException) {
+      exception = new FileNotFoundException("Could not find the requested file: " + filePath);
+    } catch (IOException ioException) {
+      // Save for later - ensure filestreams are closed before throwing exception
+      exception = new IOException("Unexpected IOException has occurred: " + ioException.getMessage());
+    } finally {
+      if (outputStream != null) {
+        outputStream.close();
+      }
+
+      if (inputStream != null) {
+        inputStream.close();
+      }
     }
 
-    // Initializes the file descriptor if the file path is valid
-    private void initializeFileDescriptor(String filePath, CallbackContext callbackContext) throws IOException, FileNotFoundException, FileFormatException {
-        fileDescriptor = null;
-
-        if(filePath == null || filePath.length() < 1)
-            throw new FileNotFoundException("The file path provided is not a valid file path.");
-
-        String[] pathArr = filePath.split("\\.");
-
-        int numSections = pathArr.length;
-        if(numSections < 2)
-            throw new FileNotFoundException("The file path provided is not a valid file path: " + filePath);
-
-        String ext = pathArr[numSections - 1];
-        if(!ext.equals("pdf"))
-            throw new FileFormatException("Invalid File Extension provided to Pdf Render Service: " + ext);
-
-        fileDescriptor = getFileDescriptor(filePath);
+    if (exception != null) {
+      throw exception;
     }
 
-    // Copies the File at the specified path from the assets folder and initializes a ParcelFileDescriptor using that file
-    private ParcelFileDescriptor getFileDescriptor(String filePath) throws IOException, FileNotFoundException {
-        File file = copyFileFromAssets(filePath);
+    return outputFile;
+  }
 
-        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
+  // Render the bitmap and output the byte array representing it.
+  private final byte[] renderBitmapAsBytes() throws IOException {
+    if (renderer == null) {
+      throw new PDFRendererException("An unexpected exception has occurred at runtime - PDFRenderer was not properly initialized.");
     }
 
-    // Copies the specified file from the assets folder to a usable path
-    private File copyFileFromAssets(String filePath) throws IOException {
-        InputStream input = null;
-        FileOutputStream output = null;
-
-        File file = new File(context.getFilesDir(), filePath);
-
-        input = context.getAssets().open("www/assets/" + filePath);
-        output = context.openFileOutput(file.getName(), Context.MODE_PRIVATE);
-
-        byte[] buffer = new byte[1024];
-        int currentData;
-        while((currentData = input.read(buffer)) != -1){
-            output.write(buffer, 0, currentData);
-        }
-
-        output.flush();
-
-        if(output != null){
-            output.close();
-            output = null;
-        }
-
-        if(input != null) {
-            input.close();
-            input = null;
-        }
-
-        return file;
+    if (currentPage == null) {
+      throw new PDFRendererException("An unexpected exception has occurred at runtime - Could not render the requested page.");
     }
 
-    private int getPageCount() {
-        if(renderer == null)
-            return 0;
+    Bitmap bitmap = getBitmap(renderWidth, renderHeight);
 
-        return renderer.getPageCount();
+    // Select the render mode (currently only 'display' is used) and render the current page
+    int renderMode = currentRenderMode.equals("print") ? Page.RENDER_MODE_FOR_PRINT : Page.RENDER_MODE_FOR_DISPLAY;
+    currentPage.render(bitmap, null, null, renderMode);
+
+    return convertBitmapToByteArray(bitmap);
+  }
+
+  private final void closeCurrentPage() {
+    if (currentPage != null) {
+      currentPage.close();
+    }
+  }
+
+  private final void closeRenderer() {
+    if (renderer == null) {
+      Log.w(LOG_TAG, "Attempted to close null renderer. Skipping operation.");
+      return;
     }
 
-    private int getCurrentPageNo() {
-        return mPageNo;
+    renderer.close();
+  }
+
+  // Provides a Standard Method of Converting Bitmaps to an array of Bytes
+  private static byte[] convertBitmapToByteArray(Bitmap bitmap) {
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+
+    return outputStream.toByteArray();
+  }
+
+  // Provides Standard Method of Bitmap Creation
+  private static Bitmap getBitmap(final int width, final int height) {
+    return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+  }
+
+  // Exception thrown when a user attempts to open a file that is not a PDF
+  private final class FileFormatException extends IOException {
+    FileFormatException(final String msg) {
+      super(msg);
     }
+  }
 
-    private JSONObject getPageInfo() throws JSONException{
-        int pageNo = getCurrentPageNo();
-        int pageCount = getPageCount();
-
-        JSONObject output = new JSONObject();
-
-        output.put("filePath", mFilePath);
-        output.put("pageNumber", pageNo);
-        output.put("pageCount", pageCount);
-
-        return output;
+  // Exception thrown concerning errors with the PDFRenderer class
+  private final class PDFRendererException extends IOException {
+    PDFRendererException(final String msg) {
+      super(msg);
     }
-
-    private static byte[] toByteArray(Bitmap bitmap){
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-
-        return stream.toByteArray();
-    }
-
-    private static Bitmap getBitmap(int width, int height){
-        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-    }
-
-    // Exception thrown when a user attempts to open a file that is not a PDF
-    class FileFormatException extends IOException {
-        FileFormatException(String msg){
-            super(msg);
-        }
-    }
+  }
 }
