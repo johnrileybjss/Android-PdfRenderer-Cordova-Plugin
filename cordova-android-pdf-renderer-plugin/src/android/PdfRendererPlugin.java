@@ -324,9 +324,8 @@ public final class PdfRendererPlugin extends CordovaPlugin {
       // Write the PDF Data to a temporary output file
       int currentData;
 
-      // Uses Default Buffer Size as indicated by:
-      // http://www.docjar.com/html/api/java/io/BufferedReader.java.html
-      byte[] buffer = new byte[8192];
+      // Sizes the buffer based on the number of readable bytes until a block will occur
+      byte[] buffer = new byte[inputStream.available()];
       while ((currentData = inputStream.read(buffer)) != -1) {
         outputStream.write(buffer, 0, currentData);
       }
