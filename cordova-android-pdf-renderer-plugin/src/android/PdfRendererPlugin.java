@@ -10,10 +10,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.FileOutputStream;
 
@@ -29,7 +33,18 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 /**
- * This class handles a pdf file called from JavaScript and converts a selected page (default is first) to a byte array representing a bitmap.
+ * This class handles a pdf file called from JavaScript and converts a selected page
+ * (default is first) to a byte array representing a bitmap.
+ *
+ * The class currently relies on the presence of the file in the standard Android assets folder
+ * when loading the file.
+ *
+ * Changes would need to be made in order to facilitate loading a file from internal/external
+ * storage on the device.
+ *
+ * For the sake of simplicity, the renderer only uses the 'display' render mode at the moment,
+ * and is designed to render pages based on the existing page (using next page and
+ * previous page methods) rather than allowing the user to choose a page by number.
  */
 public final class PdfRendererPlugin extends CordovaPlugin {
 
@@ -287,8 +302,11 @@ public final class PdfRendererPlugin extends CordovaPlugin {
   // Loads the specified file from the assets folder to a usable path
   private final File loadFileFromAssets(final String filePath) throws IOException {
     File outputFile = null;
+
     InputStream inputStream = null;
     FileOutputStream outputStream = null;
+
+    BufferedReader fileReader = null;
 
     IOException exception = null;
     try {
@@ -297,12 +315,17 @@ public final class PdfRendererPlugin extends CordovaPlugin {
       // Loads the Asset File into an Input Stream
       inputStream = context.getAssets().open("www/assets/" + filePath);
 
+      // Initializes a Buffered Reader for reading the data of the input stream
+      fileReader = new BufferedReader(new InputStreamReader(inputStream));
+
       // Creates an output stream for the temporary copy of the asset file
       outputStream = context.openFileOutput(outputFile.getName(), Context.MODE_PRIVATE);
 
       // Write the PDF Data to a temporary output file
-      byte[] buffer = new byte[1024];
       int currentData;
+
+      // Sizes the buffer based on the number of readable bytes until a block will occur
+      byte[] buffer = new byte[inputStream.available()];
       while ((currentData = inputStream.read(buffer)) != -1) {
         outputStream.write(buffer, 0, currentData);
       }
