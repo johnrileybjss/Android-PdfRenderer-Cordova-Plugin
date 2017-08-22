@@ -45,6 +45,8 @@ import android.util.Log;
  * For the sake of simplicity, the renderer only uses the 'display' render mode at the moment,
  * and is designed to render pages based on the existing page (using next page and
  * previous page methods) rather than allowing the user to choose a page by number.
+ *
+ * Similarly, the width and height have also been hard-coded for the sake of simplicity.
  */
 public final class PdfRendererPlugin extends CordovaPlugin {
 
